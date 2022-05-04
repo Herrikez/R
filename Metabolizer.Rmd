@@ -1,0 +1,144 @@
+---
+title: "Metabolizer"
+output: html_notebook
+---
+# 1st step
+
+```{r}
+
+setwd("G:/My Drive/data/CCLE and BRCA project from 2013/paper all figures March 2016/Cell Resource Paper 2020/Fig1_gene_expression/METABRIC/Data compilation/")
+
+
+library(dplyr)
+library(gplots)
+library(tidyr)
+library(tibble)
+library(stringr)
+library(MCbiclust)
+library(gdata)
+library(WriteXLS)
+library(biomaRt)
+library(pheatmap)
+library(propagate)
+library(GSVA)
+library(openxlsx)
+
+setwd("G:/My Drive/data/CCLE and BRCA project from 2013/paper all figures March 2016/Cell Resource Paper 2020/Fig1_gene_expression/METABRIC/Data compilation/")
+
+load('METABRIC_DATA.RData')
+load('METABRIC_gene_lists.RData')
+load('METABRIC_sort_data.RData')
+load('METABRIC_PC1_GSEA.RData')
+```
+
+# Step 2: get the correlation of each sample to the forks
+
+```{r}
+sort.df <- data.frame(sample = Complete_METABRIC_Clinical_Features_Data[,1],
+                      MB3.index = order(mito.sort[[1]]),
+                      MB3.pc1  = mito.pc1[[1]][order(mito.sort[[1]])],
+                      MB2.index = order(mito.sort[[2]]),
+                      MB2.pc1  = mito.pc1[[2]][order(mito.sort[[2]])],
+                      Mito3.index = order(mito.sort[[3]]),
+                      Mito3.pc1  = mito.pc1[[3]][order(mito.sort[[3]])],
+                      MB1.index = order(ICT1.sort[[1]]),
+                      MB1.pc1  = ICT1.pc1[[1]][order(ICT1.sort[[1]])],
+                      Random1.index = order(random.sort[[1]]),
+                      Random1.pc1  = random.pc1[[1]][order(random.sort[[1]])],
+                      Random2.index = order(random.sort[[2]]),
+                      Random2.pc1  = random.pc1[[2]][order(random.sort[[2]])])
+
+
+all.clinical.df <- left_join(sort.df,
+                             Complete_METABRIC_Clinical_Features_Data,
+                             by = 'sample')
+```
+
+# top MB1 and MB2
+
+```{r}
+MB1.UF <- all.clinical.df %>%
+  filter(MB1.pc1 > 0) %>%
+  slice_min(MB1.index, n = 10)
+MB1.UF
+
+MB2.UF <- all.clinical.df %>%
+  filter(MB1.pc1 > 0) %>%
+  slice_min(MB2.index, n = 10)
+MB2.UF
+
+MB1.LF <- all.clinical.df %>%
+  filter(MB1.pc1 < 0) %>%
+  slice_min(MB1.index, n = 10)
+MB1.LF
+
+MB2.LF <- all.clinical.df %>%
+  filter(MB1.pc1 < 0) %>%
+  slice_min(MB2.index, n = 10)
+MB2.LF
+```
+
+#Change .dots by -dashes 
+
+```{r}
+names(METABRIC.data) <- gsub('\\.','-',names(METABRIC.data))  
+```
+
+#Extract metabolic genes from METABRIC.data
+
+```{r}
+metab.genes.xls <- read.xlsx('GS metabolic genes list.xlsx', sheet=1)
+metab.METABRIC <- filter(METABRIC.data, METABRIC.data[,1] %in% metab.genes.xls[,2])
+
+```
+
+
+# Tranform sample row into a list of samples, and then select those samples from METABRIC file 
+
+```{r}
+columns1L <- MB1.LF[,1]
+columns1L <- append(columns1L, "external_gene_name", after = 0)
+MB1.LF.samples <- metab.METABRIC[,columns1L]
+
+columns1U <- MB1.UF[,1]
+columns1U <- append(columns1U, "external_gene_name", after = 0)
+MB1.UF.samples <- metab.METABRIC[,columns1U]
+
+columns2L <- MB2.LF[,1]
+columns2L <- append(columns2L, "external_gene_name", after = 0)
+MB2.LF.samples <- metab.METABRIC[,columns2L]
+
+columns2U <- MB2.UF[,1]
+columns2U <- append(columns2U, "external_gene_name", after = 0)
+MB2.UF.samples <- metab.METABRIC[,columns2U]
+```
+
+# Create Excel files from the samples selected previously 
+
+```{r}
+write.xlsx(MB1.UF.samples,
+           file = 'MB1.UF.samples.xlsx', overwrite = TRUE)
+
+write.xlsx(MB2.UF.samples,
+           file = 'MB2.UF.samples.xlsx', overwrite = TRUE)
+
+write.xlsx(MB2.LF.samples,
+           file = 'MB2.LF.samples.xlsx', overwrite = TRUE)
+
+write.xlsx(MB1.LF.samples,
+           file = 'MB1.LF.samples.xlsx', overwrite = TRUE)
+
+```
+
+#After this script starts the annoying part, the one I could not optimize:
+#In order to make the data run on Metabolizer: 
+
+#->the external_gene_names need to converted to ENTREZ numeric codes using gprofiler
+
+#->the data needs to be checked for repetitions because gprofiler creates them
+
+#->at least 2 conditions (MB1.LF and MB2.LF, for example) need to be included in the same TSV file, after a numeric entrez id in the 1st column
+
+#->There needs to be a seperate TSV file describing which sample belongs to which group
+
+#->the process is dificult to explain, the best thing is to download the github file of metabolizer, which includes dummy data in the format required.
