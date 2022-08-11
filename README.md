@@ -1,3 +1,3 @@
 # Metabolizer converter - a project in R
 
-Script to choose representative samples of breast cancer subtypes and get expression data in a format that can run on https://github.com/babelomics/metabolizer
+This is a script I had to do to be able to transform data to analyzed on Metabolizer(github.com/babelomics/metabolizer or metabolizer.babelomics.org/, Çubuk et al. 2019), which has very weirdly specific requirements.
