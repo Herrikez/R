@@ -2,11 +2,12 @@
 title: "Metabolizer"
 output: html_notebook
 ---
-# 1st step
+# This is a script I did to be able to run our dataset in the Metabolizer script(metabolizer.babelomics.org/)
 
 ```{r}
 
-setwd("G:/My Drive/data/CCLE and BRCA project from 2013/paper all figures March 2016/Cell Resource Paper 2020/Fig1_gene_expression/METABRIC/Data compilation/")
+
+setwd("C:/Users/Utente/Documents/Portfolio/R/")
 
 
 library(dplyr)
@@ -23,7 +24,6 @@ library(propagate)
 library(GSVA)
 library(openxlsx)
 
-setwd("G:/My Drive/data/CCLE and BRCA project from 2013/paper all figures March 2016/Cell Resource Paper 2020/Fig1_gene_expression/METABRIC/Data compilation/")
 
 load('METABRIC_DATA.RData')
 load('METABRIC_gene_lists.RData')
@@ -78,7 +78,7 @@ MB2.LF <- all.clinical.df %>%
 MB2.LF
 ```
 
-#Change .dots by -dashes 
+#Exchange .dots by -dashes 
 
 ```{r}
 names(METABRIC.data) <- gsub('\\.','-',names(METABRIC.data))  
@@ -87,7 +87,7 @@ names(METABRIC.data) <- gsub('\\.','-',names(METABRIC.data))
 #Extract metabolic genes from METABRIC.data
 
 ```{r}
-metab.genes.xls <- read.xlsx('GS metabolic genes list.xlsx', sheet=1)
+metab.genes.xls <- read.xlsx('metabolic genes list.xlsx', sheet=1)
 metab.METABRIC <- filter(METABRIC.data, METABRIC.data[,1] %in% metab.genes.xls[,2])
 
 ```
@@ -130,15 +130,9 @@ write.xlsx(MB1.LF.samples,
 
 ```
 
-#After this script starts the annoying part, the one I could not optimize:
-#In order to make the data run on Metabolizer: 
+#the data obtained in this script then needs to go trought a manual step using gprofiler (biit.cs.ut.ee/gprofiler/gost), which converts the external_gene_names to ENTREZ numeric codes and controlled for repetitions.
 
-#->the external_gene_names need to converted to ENTREZ numeric codes using gprofiler
 
-#->the data needs to be checked for repetitions because gprofiler creates them
+#->There needs to be a seperate TSV file describing the experimental setup of each group
 
-#->at least 2 conditions (MB1.LF and MB2.LF, for example) need to be included in the same TSV file, after a numeric entrez id in the 1st column
-
-#->There needs to be a seperate TSV file describing which sample belongs to which group
-
-#->the process is dificult to explain, the best thing is to download the github file of metabolizer, which includes dummy data in the format required.
+#->And then the data is ready to be run on Metabolizer (http://metabolizer.babelomics.org/)
